@@ -1,0 +1,9 @@
+POST http://localhost:8080/games
+content-type: application/json
+
+{
+    "name": "DND Night Again",
+    "style": "DND",
+    "location": "My House",
+    "date_time": "2025-01-01T15:04:05Z"
+}

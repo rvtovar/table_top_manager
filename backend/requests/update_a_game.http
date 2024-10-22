@@ -1,0 +1,9 @@
+PUT http://localhost:8080/games/2
+content-type: application/json
+
+{
+  "name": "Games with Skye",
+  "style": "Numenera",
+  "location": "Williamsville",
+  "date_time": "2025-01-25T15:04:05Z"
+}
