@@ -30,12 +30,15 @@ func GetGames(c *gin.Context) {
 }
 
 func CreateGame(c *gin.Context) {
+
 	var game models.Game
 	err := c.ShouldBindJSON(&game)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	uid := c.GetInt64("uid")
+	game.UserId = uid
 	game.Save()
 	c.JSON(http.StatusCreated, game)
 }
@@ -46,11 +49,18 @@ func UpdateGame(c *gin.Context) {
 		return
 	}
 
-	_, err = models.GetGame(gid)
+	uid := c.GetInt64("uid")
+	game, err := models.GetGame(gid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find game"})
 		return
 	}
+
+	if uid != game.UserId {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authorized"})
+		return
+	}
+
 	var updatedGame models.Game
 	err = c.ShouldBindJSON(&updatedGame)
 	if err != nil {
@@ -60,7 +70,7 @@ func UpdateGame(c *gin.Context) {
 	updatedGame.ID = gid
 	err = updatedGame.Update()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update game"})
+		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, updatedGame)
@@ -72,7 +82,18 @@ func DeleteGame(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not parse id"})
 		return
 	}
-	err = models.DeleteGame(id)
+	uid := c.GetInt64("uid")
+	game, err := models.GetGame(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find game"})
+		return
+	}
+
+	if uid != game.UserId {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authorized"})
+		return
+	}
+	err = game.Delete()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete game"})
 		return

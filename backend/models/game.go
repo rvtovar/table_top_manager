@@ -11,7 +11,7 @@ type Game struct {
 	Style    string    `json:"style" binding:"required"`
 	Location string    `json:"location" binding:"required"`
 	DateTime time.Time `json:"date_time" binding:"required"`
-	UserId   int       `json:"user_id"`
+	UserId   int64     `json:"user_id"`
 }
 
 func (g *Game) Save() error {
@@ -80,17 +80,17 @@ func GetGame(id int64) (*Game, error) {
 }
 
 func (g *Game) Update() error {
-	query := `update games set name = ?, style = ?, location = ?, dateTime = ?, user_id = ? where id = ?`
+	query := `update games set name = ?, style = ?, location = ?, dateTime = ? where id = ?`
 	stmt, err := db.DB.Prepare(query)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(g.Name, g.Style, g.Location, g.DateTime, g.UserId, g.ID)
+	_, err = stmt.Exec(g.Name, g.Style, g.Location, g.DateTime, g.ID)
 	return err
 }
 
-func DeleteGame(id int64) error {
+func (g *Game) Delete() error {
 	query := `
 	delete from games
 	where id = ?
@@ -101,6 +101,34 @@ func DeleteGame(id int64) error {
 	}
 
 	defer stmt.Close()
-	_, err = stmt.Exec(id)
+	_, err = stmt.Exec(g.ID)
+	return err
+}
+
+func (g *Game) Register(userId int64) error {
+	query := `
+		INSERT INTO registrations (game_id, user_id)
+		VALUES (?, ?)
+	`
+
+	stmt, err := db.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+	_, err = stmt.Exec(g.ID, userId)
+	return err
+}
+
+func (g *Game) CancelRegistration(userId int64) error {
+	query := `
+		DELETE FROM registrations WHERE game_id = ? AND user_id = ?`
+	stmt, err := db.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(g.ID, userId)
 	return err
 }
